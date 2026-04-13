@@ -4,9 +4,22 @@ import re
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import AccessToken
 
+def validate_image(value):
+    allowed_formats = ['image/jpeg', 'image/png', 'image/webp']
+    if value.content_type not in allowed_formats:
+        raise serializers.ValidationError("Only JPEG, PNG, and WEBP images are allowed.")
+    
+    max_size = 2 * 1024 * 1024
+    if value.size > max_size:
+        raise serializers.ValidationError("Image size must not exceed 2MB.")
+    
+    return value
+
 class RegisterUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     password2 = serializers.CharField(write_only=True)
+    profile_picture = serializers.ImageField(validators=[validate_image], required=False)
+
 
     class Meta:
         model = User
@@ -60,3 +73,35 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         }
 
         return data
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    profile_picture = serializers.ImageField(validators=[validate_image], required=False)
+
+    class Meta:
+        model = User
+        fields = ['email', 'username', 'phone_number', 'profile_picture']
+        extra_kwargs = {
+            'email': {'required': False},
+            'username': {'required': False},
+        }
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True, required=True)
+    new_password = serializers.CharField(write_only=True, required=True)
+
+    def validate_new_password(self, value):
+        """Check that the new password is strong enough."""
+        if len(value) < 8:
+            raise serializers.ValidationError("New password must be at least 8 characters long.")
+        if not re.search(r'[A-Z]', value):
+            raise serializers.ValidationError("New password must contain at least one uppercase letter.")
+        if not re.search(r'[a-z]', value):
+            raise serializers.ValidationError("New password must contain at least one lowercase letter.")
+        if not re.search(r'\d', value):
+            raise serializers.ValidationError("New password must contain at least one digit.")
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', value):
+            raise serializers.ValidationError("New password must contain at least one special character.")
+        return value
+        
