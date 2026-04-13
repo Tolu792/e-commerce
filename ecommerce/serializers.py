@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User
+from .models import User, Product
 import re
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import AccessToken
@@ -13,6 +13,19 @@ def validate_image(value):
     if value.size > max_size:
         raise serializers.ValidationError("Image size must not exceed 2MB.")
     
+    return value
+
+def validate_password_strength(value):
+    if len(value) < 8:
+        raise serializers.ValidationError("Password must be at least 8 characters long.")
+    if not re.search(r'[A-Z]', value):
+        raise serializers.ValidationError("Password must contain at least one uppercase letter.")
+    if not re.search(r'[a-z]', value):
+        raise serializers.ValidationError("Password must contain at least one lowercase letter.")
+    if not re.search(r'\d', value):
+        raise serializers.ValidationError("Password must contain at least one digit.")
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', value):
+        raise serializers.ValidationError("Password must contain at least one special character.")
     return value
 
 class RegisterUserSerializer(serializers.ModelSerializer):
@@ -31,18 +44,7 @@ class RegisterUserSerializer(serializers.ModelSerializer):
         return data
     
     def validate_password(self, value):
-        """Check that the password is strong enough."""
-        if len(value) < 8:
-            raise serializers.ValidationError("Password must be at least 8 characters long.")
-        if not re.search(r'[A-Z]', value):
-            raise serializers.ValidationError("Password must contain at least one uppercase letter.")
-        if not re.search(r'[a-z]', value):
-            raise serializers.ValidationError("Password must contain at least one lowercase letter.")
-        if not re.search(r'\d', value):
-            raise serializers.ValidationError("Password must contain at least one digit.")
-        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', value):
-            raise serializers.ValidationError("Password must contain at least one special character.")
-        return value
+        return validate_password_strength(value)
 
     def create(self, validated_data):
         validated_data.pop('password2')
@@ -91,17 +93,18 @@ class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(write_only=True, required=True)
     new_password = serializers.CharField(write_only=True, required=True)
 
-    def validate_new_password(self, value):
-        """Check that the new password is strong enough."""
-        if len(value) < 8:
-            raise serializers.ValidationError("New password must be at least 8 characters long.")
-        if not re.search(r'[A-Z]', value):
-            raise serializers.ValidationError("New password must contain at least one uppercase letter.")
-        if not re.search(r'[a-z]', value):
-            raise serializers.ValidationError("New password must contain at least one lowercase letter.")
-        if not re.search(r'\d', value):
-            raise serializers.ValidationError("New password must contain at least one digit.")
-        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', value):
-            raise serializers.ValidationError("New password must contain at least one special character.")
+    def validate_password(self, value):
+        return validate_password_strength(value)
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(validators=[validate_image], required=False)
+
+    class Meta:
+        model = Product
+        fields = ['id', 'name', 'description', 'price', 'stock', 'category', 'image']
+    
+    def validate_price(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Price must be greater than zero.")
         return value
-        
