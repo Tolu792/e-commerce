@@ -1,10 +1,10 @@
-from .serializers import RegisterUserSerializer, CustomTokenObtainPairSerializer, UserProfileSerializer, ChangePasswordSerializer, ProductSerializer
+from .serializers import RegisterUserSerializer, CustomTokenObtainPairSerializer, UserProfileSerializer, ChangePasswordSerializer, ProductSerializer, CategorySerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, viewsets
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from .models import Product
+from .models import Product, Category
 
 class RegisterUserView(APIView):
     def post(self, request):
@@ -70,6 +70,18 @@ class ChangePasswordView(APIView):
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            permission_classes = [IsAdminUser]
+        else:
+            permission_classes = [IsAuthenticated]
+        return [permission() for permission in permission_classes]
+
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
