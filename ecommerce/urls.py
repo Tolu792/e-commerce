@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import RegisterUserView, CustomTokenObtainPairView, UserProfileView, ChangePasswordView, ProductViewSet, CategoryViewSet
+from .views import RegisterUserView, CustomTokenObtainPairView, UserProfileView, ChangePasswordView, ProductViewSet, CategoryViewSet, CartViewSet
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.routers import DefaultRouter
 
@@ -7,6 +7,7 @@ router = DefaultRouter()
 
 router.register('products', ProductViewSet, basename='products')
 router.register('category', CategoryViewSet, basename='category')
+router.register('cart', CartViewSet, basename='cart')
 
 urlpatterns = [
     path('', include(router.urls)),

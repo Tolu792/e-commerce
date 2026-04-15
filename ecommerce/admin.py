@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Product, Category
+from .models import User, Product, Category, CartItem
 
 admin.site.site_header = "E-commerce Admin"
 admin.site.site_title = "E-commerce Admin Portal"
@@ -21,3 +21,8 @@ class ProductAdmin(admin.ModelAdmin):
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'description')
     search_fields = ['name']
+
+@admin.register(CartItem)
+class CartItemAdmin(admin.ModelAdmin):
+    list_display = ('id', 'cart', 'product', 'quantity')
+    search_fields = ['product']
