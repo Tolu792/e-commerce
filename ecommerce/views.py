@@ -1,12 +1,14 @@
 from .serializers import (RegisterUserSerializer, CustomTokenObtainPairSerializer, UserProfileSerializer,
-                          ChangePasswordSerializer, ProductSerializer, CategorySerializer, CartSerializer, CartItemSerializer)
+                          ChangePasswordSerializer, ProductSerializer, CategorySerializer, CartSerializer,
+                            CartItemSerializer, OrderSerializer, OrderItemSerializer)
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, viewsets
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from .models import Product, Category, Cart, CartItem
+from .models import Product, Category, Cart, CartItem, Order, OrderItem
 from rest_framework.decorators import action
+from django.db import transaction
 
 class RegisterUserView(APIView):
     def post(self, request):
@@ -215,3 +217,21 @@ class CartViewSet(viewsets.GenericViewSet):
         
         cart_item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class OrderViewSet(viewsets.GenericViewSet):
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Order.objects.filter(user=self.request.user)
+    
+    @action(detail=False, methods=['get'])
+    def my_orders(self, request):
+        orders = self.get_queryset()
+        serializer = OrderSerializer(orders, many=True)
+        return Response({
+            'message': 'Orders gotten successfully.',
+            'status': True,
+            'data': serializer.data
+        })
