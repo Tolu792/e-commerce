@@ -234,4 +234,21 @@ class OrderViewSet(viewsets.GenericViewSet):
             'message': 'Orders gotten successfully.',
             'status': True,
             'data': serializer.data
-        })
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'])
+    def order(self, request, pk=None):
+        try:
+            order_item = Order.objects.get(user=self.request.user, id=pk)
+        except Order.DoesNotExist:
+            return Response({
+                'message': 'Order not found.',
+                'status': False
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = OrderSerializer(order_item)
+        return Response({
+            'message': 'Order gotten successfully.',
+            'status': True,
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
