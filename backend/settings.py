@@ -41,7 +41,10 @@ INSTALLED_APPS = [
 
     # my apps
     'ecommerce',
+
+    # third-party apps
     'rest_framework',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -127,6 +130,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 MEDIA_URL = '/media/'
@@ -135,4 +139,10 @@ MEDIA_ROOT = BASE_DIR / 'media'
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Ecommerce API',
+    'DESCRIPTION': 'API documentation for the ecommerce project',
+    'VERSION': '1.0.0',
 }
