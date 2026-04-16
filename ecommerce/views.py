@@ -9,6 +9,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from .models import Product, Category, Cart, CartItem, Order, OrderItem
 from rest_framework.decorators import action
 from django.db import transaction
+from django.utils import timezone
 
 class RegisterUserView(APIView):
     def post(self, request):
@@ -252,3 +253,53 @@ class OrderViewSet(viewsets.GenericViewSet):
             'status': True,
             'data': serializer.data
         }, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['post'])
+    def place_order(self, request):
+        user = request.user
+        cart, created = Cart.objects.get_or_create(user=user)
+        cart_items = cart.items.select_related('product').all()    
+
+        # check if cart is empty
+        if not cart_items.exists():
+            return Response({
+                'message': 'Your cart is empty. Unable to place order.',
+                'status': False
+            }, status=status.HTTP_400_BAD_REQUEST)    
+
+        # validate stock for all items
+        for item in cart_items:
+            if item.quantity > item.product.stock:
+                return Response({
+                    'message': f'Not enough stock for {item.product.name}. Available: {item.product.stock}.',
+                    'status': False
+                }, status=status.HTTP_400_BAD_REQUEST)    
+
+        with transaction.atomic():
+            # calculate total
+            total_price = sum(item.product.price * item.quantity for item in cart_items)    
+
+            # create order
+            order = Order.objects.create(user=user, total_price=total_price)    
+
+            # create order items
+            for item in cart_items:
+                OrderItem.objects.create(
+                    order=order,
+                    product=item.product,
+                    quantity=item.quantity,
+                    price=item.product.price
+                )
+                # deduct stock
+                item.product.stock -= item.quantity
+                item.product.save()    
+
+            # clear cart
+            cart_items.delete()    
+
+        serializer = OrderSerializer(order)
+        return Response({
+            'message': 'Order placed successfully.',
+            'status': 'success',
+            'data': serializer.data
+        }, status=status.HTTP_201_CREATED)
