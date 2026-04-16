@@ -12,6 +12,7 @@ from django.db import transaction
 from drf_spectacular.utils import extend_schema
 
 class RegisterUserView(APIView):
+    @extend_schema(request=RegisterUserSerializer, responses={201: RegisterUserSerializer, 400: None})
     def post(self, request):
         serializer = RegisterUserSerializer(data=request.data)
         if serializer.is_valid():
