@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from .models import Product, Category, Cart, CartItem, Order, OrderItem
 from rest_framework.decorators import action
 from django.db import transaction
-from django.utils import timezone
+from drf_spectacular.utils import extend_schema
 
 class RegisterUserView(APIView):
     def post(self, request):
@@ -60,6 +60,7 @@ class UserProfileView(APIView):
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=ChangePasswordSerializer, responses={200: None, 400: None})
     def post(self, request):
         serializer = ChangePasswordSerializer(data=request.data)
         if serializer.is_valid():

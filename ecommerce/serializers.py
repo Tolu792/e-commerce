@@ -109,8 +109,18 @@ class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(write_only=True, required=True)
     new_password = serializers.CharField(write_only=True, required=True)
 
-    def validate_password(self, value):
-        return validate_password_strength(value)
+
+    def validate(self, data):
+        old_password = data.get('old_password')
+        new_password = data.get('new_password')
+        
+        if old_password == new_password:
+            raise serializers.ValidationError("New password cannot be the same as the old password.")
+        
+        # validate new password strength
+        validate_password_strength(new_password)
+        
+        return data
 
 
 class ProductSerializer(serializers.ModelSerializer):
