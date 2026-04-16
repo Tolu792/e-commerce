@@ -303,3 +303,39 @@ class OrderViewSet(viewsets.GenericViewSet):
             'status': 'success',
             'data': serializer.data
         }, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['patch'])
+    def cancel_order(self, request, pk=None):
+        try:
+            order = Order.objects.get(user=request.user, id=pk)
+        except Order.DoesNotExist:
+            return Response({
+                'message': 'Order not found.',
+                'status': False
+            }, status=status.HTTP_404_NOT_FOUND)
+    
+        if order.status == 'cancelled':
+            return Response({
+                'message': 'Order is already cancelled.',
+                'status': False
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
+        if order.status != 'pending':
+            return Response({
+                'message': 'Only pending orders can be cancelled.',
+                'status': False
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
+        with transaction.atomic():
+            # restore stock
+            for item in order.items.select_related('product').all():
+                item.product.stock += item.quantity
+                item.product.save()
+    
+            order.status = 'cancelled'
+            order.save()
+    
+        return Response({
+            'message': 'Your order has been cancelled.',
+            'status': False
+        }, status=status.HTTP_200_OK)
