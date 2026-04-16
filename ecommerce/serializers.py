@@ -28,6 +28,16 @@ def validate_password_strength(value):
         raise serializers.ValidationError("Password must contain at least one special character.")
     return value
 
+def validate_phone_number(value):
+    if len(value) < 14:
+        raise serializers.ValidationError("Phone number must be at least 14 characters long.")
+    if len(value) > 14:
+        raise serializers.ValidationError("Phone number must not exceed 14 characters.")
+    if re.search(r'[A-Z]', value) or re.search(r'[a-z]', value) or re.search(r'[!@#$_%^&*(),.?":{}|<>\-]', value):
+        raise serializers.ValidationError("Phone number contains an invalid character.")
+    return value
+
+
 class RegisterUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     password2 = serializers.CharField(write_only=True)
@@ -45,6 +55,9 @@ class RegisterUserSerializer(serializers.ModelSerializer):
     
     def validate_password(self, value):
         return validate_password_strength(value)
+    
+    def validate_phone_number(self, value):
+        return validate_phone_number(value)
 
     def create(self, validated_data):
         validated_data.pop('password2')
@@ -87,6 +100,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'email': {'required': False},
             'username': {'required': False},
         }
+    
+    def validate_phone_number(self, value):
+        return validate_phone_number(value)
 
 
 class ChangePasswordSerializer(serializers.Serializer):
