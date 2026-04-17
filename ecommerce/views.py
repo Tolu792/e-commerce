@@ -10,6 +10,7 @@ from .models import Product, Category, Cart, CartItem, Order, OrderItem
 from rest_framework.decorators import action
 from django.db import transaction
 from drf_spectacular.utils import extend_schema
+from django_filters.rest_framework import DjangoFilterBackend
 
 class RegisterUserView(APIView):
     @extend_schema(request=RegisterUserSerializer, responses={201: RegisterUserSerializer, 400: None})
@@ -77,6 +78,8 @@ class ChangePasswordView(APIView):
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['category']
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
