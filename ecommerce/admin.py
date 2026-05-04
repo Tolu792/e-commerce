@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Product, Category, CartItem, Order, OrderItem
+from .models import User, Product, Category, CartItem, Order, OrderItem, Wishlist, WishlistItem
 
 admin.site.site_header = "E-commerce Admin"
 admin.site.site_title = "E-commerce Admin Portal"
@@ -36,4 +36,14 @@ class OrderAdmin(admin.ModelAdmin):
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):
     list_display = ('id', 'order', 'product', 'quantity', 'price')
+    search_fields = ['product__name']
+
+@admin.register(Wishlist)
+class WishlistAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'created_at')
+    search_fields = ['user__email']
+
+@admin.register(WishlistItem)
+class WishlistItemAdmin(admin.ModelAdmin):
+    list_display = ('id', 'wishlist', 'product')
     search_fields = ['product__name']

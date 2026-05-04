@@ -93,6 +93,8 @@ class OrderItem(models.Model):
 
 class Wishlist(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='wishlist')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.user.email
