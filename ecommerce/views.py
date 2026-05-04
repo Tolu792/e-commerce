@@ -1,12 +1,12 @@
 from .serializers import (RegisterUserSerializer, CustomTokenObtainPairSerializer, UserProfileSerializer,
                           ChangePasswordSerializer, ProductSerializer, CategorySerializer, CartSerializer,
-                            CartItemSerializer, OrderSerializer, OrderItemSerializer)
+                            CartItemSerializer, OrderSerializer, OrderItemSerializer, WishlistItemSerializer)
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, viewsets
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from .models import Product, Category, Cart, CartItem, Order, OrderItem
+from .models import Product, Category, Cart, CartItem, Order, OrderItem, Wishlist, WishlistItem
 from rest_framework.decorators import action
 from django.db import transaction
 from drf_spectacular.utils import extend_schema
@@ -344,3 +344,78 @@ class OrderViewSet(viewsets.GenericViewSet):
             'message': 'Your order has been cancelled.',
             'status': False
         }, status=status.HTTP_200_OK)
+
+
+class WishListViewSet(viewsets.GenericViewSet):
+    serializer_class = WishlistItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Wishlist.objects.filter(user=self.request.user)
+    
+    def get_or_create_wishlist(self):
+        wishlist, created = Wishlist.objects.get_or_create(user=self.request.user)
+        return wishlist
+    
+    @action(detail=False, methods=['get'])
+    def my_wishlist(self, request):
+        wishlist = self.get_or_create_wishlist()
+        serializer = WishlistItemSerializer(wishlist.items.select_related('product').all(), many=True)
+        return Response({
+            'message': 'Wishlist retrieved successfully.',
+            'status': True,
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['post'])
+    def add_item(self, request):
+        wishlist = self.get_or_create_wishlist()
+        product_id = request.data.get('product')
+
+        if not product_id:
+            return Response({
+                'message': 'Product is required.',
+                'status': False
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            return Response({
+                'message': 'Product not found.',
+                'status': False
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        wishlist_item, created = WishlistItem.objects.get_or_create(
+            wishlist=wishlist,
+            product=product
+        )
+
+        if not created:
+            return Response({
+                'message': 'Item already in wishlist.',
+                'status': False
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = WishlistItemSerializer(wishlist_item)
+        return Response({
+            'message': 'Item added to wishlist successfully.',
+            'status': True,
+            'data': serializer.data
+        }, status=status.HTTP_201_CREATED)
+    
+
+    @action(detail=True, methods=['delete'])
+    def remove_item(self, request, pk=None):
+        wishlist = self.get_or_create_wishlist()
+
+        try:
+            wishlist_item = WishlistItem.objects.get(id=pk, wishlist=wishlist)
+        except WishlistItem.DoesNotExist:
+            return Response({
+                'message': 'Wishlist item not found.',
+                'status': False
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        wishlist_item.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

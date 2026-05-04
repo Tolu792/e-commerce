@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Product, Category, Cart, CartItem, Order, OrderItem
+from .models import User, Product, Category, Cart, CartItem, Order, OrderItem, Wishlist, WishlistItem
 import re
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import AccessToken
@@ -183,3 +183,16 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ['id', 'status', 'total_price', 'created_at', 'items']
+
+
+class WishlistItemSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(),
+        source='product',
+        write_only=True
+    )
+
+    class Meta:
+        model = WishlistItem
+        fields = ['id', 'product', 'product_id']
